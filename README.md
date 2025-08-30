@@ -32,7 +32,7 @@ PC上のマイク音声をテキストに変換するアプリケーションで
 
 ```bash
 # リポジトリをクローン
-git clone <repository-url>
+git clone https://github.com/watayoshi1984/Whisper-Voice.git
 cd Whisper-Voice
 
 # Poetry を使用して依存関係をインストール
