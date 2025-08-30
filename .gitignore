@@ -1,0 +1,42 @@
+# Build outputs
+build/
+dist/
+*.exe
+*.pkg
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+tests/
+.cursor/
+.qoder/
+.trea/
+.mcp/
+.mcp/tool_states/
+.mcp/mcp_log.md
+

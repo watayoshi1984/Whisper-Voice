@@ -1,0 +1,50 @@
+[tool.poetry]
+name = "whisper-voice-mvp"
+version = "1.0.0"
+description = "リアルタイム文字起こしアプリケーション MVP"
+authors = ["Qoder AI"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "src"}]
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.13"
+PySide6 = "^6.6.0"
+faster-whisper = "==0.10.0"
+sounddevice = "^0.4.6"
+keyboard = "^0.13.5"
+pyperclip = "^1.8.2"
+torch = {version = "^2.1.0", source = "pytorch-cpu"}
+numpy = "^1.24.0"
+pyaudio = "^0.2.11"
+soundfile = "^0.12.1"
+psutil = "^5.9.0"
+av = "^11.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+pytest-mock = "^3.11.1"
+black = "^23.9.0"
+ruff = "^0.0.292"
+PyInstaller = "^6.0.0"
+
+[[tool.poetry.source]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+priority = "explicit"
+
+[tool.poetry.scripts]
+whisper-voice = "src.main:main"
+
+[tool.black]
+line-length = 88
+target-version = ['py310']
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+select = ["E", "F", "W", "C", "N"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
