@@ -1,7 +1,84 @@
-        except Exception as e:
-            results.append(("メモリ情報", "ERROR", f"取得エラー: {e}"))
+"""
+デバッグウィンドウモジュール
+
+アプリケーションのデバッグ情報を表示するウィンドウを提供します。
+"""
+
+import logging
+import sys
+import threading
+import time
+from datetime import datetime
+from logging import LogRecord
+from typing import Dict, List, Optional, Tuple
+
+import psutil
+from PySide6.QtWidgets import (
+    QMainWindow,
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QTabWidget,
+    QTextEdit,
+    QLabel,
+    QTableWidget,
+    QTableWidgetItem,
+    QHeaderView,
+    QGroupBox,
+    QProgressBar,
+    QSplitter,
+    QFrame,
+    QScrollArea,
+)
+from PySide6.QtCore import Qt, QTimer, Signal
+from PySide6.QtGui import QFont, QColor, QPalette
+
+from src.utils.logger_config import WhisperVoiceLogger
+
+
+def get_system_info() -> List[Tuple[str, str, str]]:
+    """システム情報を取得"""
+    results = []
+    
+    try:
+        # CPU情報
+        cpu_percent = psutil.cpu_percent(interval=1)
+        cpu_count = psutil.cpu_count()
+        results.append(("CPU使用率", "INFO", f"{cpu_percent}%"))
+        results.append(("CPUコア数", "INFO", f"{cpu_count}"))
         
-        return results
+        # メモリ情報
+        memory = psutil.virtual_memory()
+        memory_percent = memory.percent
+        memory_available = memory.available / (1024**3)  # GB
+        results.append(("メモリ使用率", "INFO", f"{memory_percent}%"))
+        results.append(("利用可能メモリ", "INFO", f"{memory_available:.1f} GB"))
+        
+    except Exception as e:
+        results.append(("システム情報", "ERROR", f"取得エラー: {e}"))
+    
+    try:
+        # ディスク情報
+        disk = psutil.disk_usage('/')
+        disk_percent = (disk.used / disk.total) * 100
+        disk_free = disk.free / (1024**3)  # GB
+        results.append(("ディスク使用率", "INFO", f"{disk_percent:.1f}%"))
+        results.append(("空き容量", "INFO", f"{disk_free:.1f} GB"))
+        
+    except Exception as e:
+        results.append(("ディスク情報", "ERROR", f"取得エラー: {e}"))
+    
+    try:
+        # メモリ詳細情報
+        memory = psutil.virtual_memory()
+        results.append(("総メモリ", "INFO", f"{memory.total / (1024**3):.1f} GB"))
+        results.append(("使用中メモリ", "INFO", f"{memory.used / (1024**3):.1f} GB"))
+        
+    except Exception as e:
+        results.append(("メモリ情報", "ERROR", f"取得エラー: {e}"))
+    
+    return results
 
 
 class DebugWindow(QMainWindow):

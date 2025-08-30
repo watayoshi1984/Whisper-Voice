@@ -20,6 +20,9 @@ pyaudio = "^0.2.11"
 soundfile = "^0.12.1"
 psutil = "^5.9.0"
 av = "^11.0"
+scipy = "^1.11.0"
+webrtcvad = "^2.0.10"
+noisereduce = "^3.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
@@ -43,7 +46,10 @@ target-version = ['py310']
 [tool.ruff]
 line-length = 88
 target-version = "py310"
+
+[tool.ruff.lint]
 select = ["E", "F", "W", "C", "N"]
+ignore = ["N802"]  # Qt event handlers must use camelCase
 
 [build-system]
 requires = ["poetry-core"]
