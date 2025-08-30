@@ -174,3 +174,8 @@ Whisper-Voice/
 ├── run_dev.py                 # 開発用実行スクリプト
 └── README.md                  # 詳細なドキュメント
 
+### Poetry仮想環境パス
+- **Poetry実行ファイル**: `C:\Users\wyosh\AppData\Roaming\Python\Python311\Scripts\poetry.exe`
+- **仮想環境名**: `locavoice-E5mAN1Dk-py3.11`
+- **仮想環境パス**: `C:\Users\wyosh\AppData\Local\pypoetry\Cache\virtualenvs\locavoice-E5mAN1Dk-py3.11`
+- **Python実行ファイル**: `...\Scripts\python.exe`

@@ -232,3 +232,10 @@ MIT License
 - 本アプリケーションはMVP（最小実行可能製品）版です
 - 音声認識の精度は100%ではありません
 - 重要な会議や文書作成には十分な確認を行ってください
+
+
+
+<a href="https://ko-fi.com/watayoshi1984">
+  <img src="https://cdn.ko-fi.com/cdn/kofi3.png?v=3" height="50" width="210" alt="watayoshi1984" />
+</a>
+

@@ -39,4 +39,6 @@ tests/
 .mcp/
 .mcp/tool_states/
 .mcp/mcp_log.md
+project.md
+backlog.md
 
