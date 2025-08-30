@@ -228,6 +228,145 @@ class MicrophoneButton(QPushButton):
         self.update()
 
 
+# リアルタイム機能は一時保留 - 全体をコメントアウト
+# class RealtimeTranscriptionDialog(QDialog):
+#     """リアルタイム文字起こし結果ダイアログ"""
+#     
+#     def __init__(self, initial_text: str, parent=None):
+#         super().__init__(parent)
+#         self.setWindowTitle("リアルタイム文字起こし")
+#         self.setFixedSize(500, 300)
+#         self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.Tool)
+#         
+#         # レイアウト設定
+#         layout = QVBoxLayout()
+#         layout.setSpacing(10)
+#         layout.setContentsMargins(15, 15, 15, 15)
+#         
+#         # タイトル
+#         title_label = QLabel("リアルタイム文字起こし結果")
+#         title_label.setStyleSheet("""
+#             QLabel {
+#                 font-size: 14px;
+#                 font-weight: bold;
+#                 color: #2c3e50;
+#                 margin-bottom: 10px;
+#             }
+#         """)
+#         layout.addWidget(title_label)
+#         
+#         # テキストエリア
+#         self.text_edit = QPlainTextEdit()
+#         self.text_edit.setPlainText(initial_text)
+#         self.text_edit.setReadOnly(True)  # リアルタイムは読み取り専用
+#         self.text_edit.setStyleSheet("""
+#             QPlainTextEdit {
+#                 border: 2px solid #bdc3c7;
+#                 border-radius: 8px;
+#                 padding: 10px;
+#                 font-size: 12px;
+#                 line-height: 1.4;
+#                 background-color: #f8f9fa;
+#             }
+#         """)
+#         layout.addWidget(self.text_edit)
+#         
+#         # ボタンレイアウト
+#         button_layout = QHBoxLayout()
+#         button_layout.setSpacing(10)
+#         
+#         # コピーボタン
+#         copy_button = QPushButton("コピー")
+#         copy_button.setStyleSheet("""
+#             QPushButton {
+#                 background-color: #3498db;
+#                 color: white;
+#                 border: none;
+#                 padding: 8px 16px;
+#                 border-radius: 6px;
+#                 font-weight: bold;
+#             }
+#             QPushButton:hover {
+#                 background-color: #2980b9;
+#             }
+#             QPushButton:pressed {
+#                 background-color: #21618c;
+#             }
+#         """)
+#         copy_button.clicked.connect(self._copy_text)
+#         button_layout.addWidget(copy_button)
+#         
+#         # クリアボタン
+#         clear_button = QPushButton("クリア")
+#         clear_button.setStyleSheet("""
+#             QPushButton {
+#                 background-color: #e74c3c;
+#                 color: white;
+#                 border: none;
+#                 padding: 8px 16px;
+#                 border-radius: 6px;
+#                 font-weight: bold;
+#             }
+#             QPushButton:hover {
+#                 background-color: #c0392b;
+#             }
+#             QPushButton:pressed {
+#                 background-color: #a93226;
+#             }
+#         """)
+#         clear_button.clicked.connect(self._clear_text)
+#         button_layout.addWidget(clear_button)
+#         
+#         # 閉じるボタン
+#         close_button = QPushButton("閉じる")
+#         close_button.setStyleSheet("""
+#             QPushButton {
+#                 background-color: #95a5a6;
+#                 color: white;
+#                 border: none;
+#                 padding: 8px 16px;
+#                 border-radius: 6px;
+#                 font-weight: bold;
+#             }
+#             QPushButton:hover {
+#                 background-color: #7f8c8d;
+#             }
+#             QPushButton:pressed {
+#                 background-color: #6c7b7d;
+#             }
+#         """)
+#         close_button.clicked.connect(self.close)
+#         button_layout.addWidget(close_button)
+#         
+#         layout.addLayout(button_layout)
+#         self.setLayout(layout)
+#     
+#     def append_text(self, text: str) -> None:
+#         """テキストを追記"""
+#         current_text = self.text_edit.toPlainText()
+#         if current_text:
+#             new_text = current_text + " " + text
+#         else:
+#             new_text = text
+#         self.text_edit.setPlainText(new_text)
+#         
+#         # 最後にスクロール
+#         cursor = self.text_edit.textCursor()
+#         cursor.movePosition(cursor.MoveOperation.End)
+#         self.text_edit.setTextCursor(cursor)
+#         self.text_edit.ensureCursorVisible()
+#     
+#     def _copy_text(self) -> None:
+#         """テキストをクリップボードにコピー"""
+#         text = self.text_edit.toPlainText()
+#         if text:
+#             pyperclip.copy(text)
+#     
+#     def _clear_text(self) -> None:
+#         """テキストをクリア"""
+#         self.text_edit.clear()
+
+
 class TranscriptionResultDialog(QDialog):
     """改善された文字起こし結果表示・編集ダイアログ"""
 
@@ -494,6 +633,7 @@ class MainWindow(QMainWindow):
 
     # シグナル定義
     mic_button_clicked = Signal()
+    model_changed = Signal(str)  # モデル変更（"large-v3" または "large-v3-turbo"）
 
     def __init__(self) -> None:
         """メインウィンドウの初期化"""
@@ -502,19 +642,47 @@ class MainWindow(QMainWindow):
 
         # ウィンドウ設定
         self.setWindowTitle("Whisper Voice MVP")
-        self.setFixedSize(120, 120)
+        self.setFixedSize(140, 160)  # 切り替えボタンのためにサイズ拡大
         self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint | Qt.Tool)
-
-        # 透明度の設定
-        self.setWindowOpacity(0.9)
+        
+        # 透過背景を有効化
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        
+        # ウィンドウ全体の透明度は設定しない（背景のみ透過）
 
         # 中央ウィジェットとレイアウト
         central_widget = QWidget()
+        central_widget.setStyleSheet("background-color: transparent;")  # 背景を透明に
         self.setCentralWidget(central_widget)
 
         layout = QVBoxLayout()
-        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setContentsMargins(15, 15, 15, 15)
         layout.setAlignment(Qt.AlignCenter)
+        
+        # モデル切り替えボタン（v3 ⇔ v3-turbo）
+        self.model_toggle_button = QPushButton("v3")
+        self.model_toggle_button.setFixedSize(80, 25)
+        self.model_toggle_button.setStyleSheet("""
+            QPushButton {
+                background-color: #27ae60;
+                color: white;
+                border: none;
+                border-radius: 12px;
+                font-size: 10px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #229954;
+            }
+            QPushButton:pressed {
+                background-color: #1e8449;
+            }
+        """)
+        self.model_toggle_button.clicked.connect(self._toggle_model)
+        layout.addWidget(self.model_toggle_button, alignment=Qt.AlignCenter)
+        
+        # 現在のモデル（デフォルトはlarge-v3）
+        self.current_model = "large-v3"
 
         # マイクボタン
         self.mic_button = MicrophoneButton()
@@ -549,6 +717,50 @@ class MainWindow(QMainWindow):
         """マイクボタンクリック時の処理"""
         self.logger.info("マイクボタンがクリックされました")
         self.mic_button_clicked.emit()
+    
+    def _toggle_model(self) -> None:
+        """Whisperモデル切り替え（v3 ⇔ v3-turbo）"""
+        if self.current_model == "large-v3":
+            self.current_model = "large-v3-turbo"
+            self.model_toggle_button.setText("turbo")
+            self.model_toggle_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #3498db;
+                    color: white;
+                    border: none;
+                    border-radius: 12px;
+                    font-size: 9px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #2980b9;
+                }
+                QPushButton:pressed {
+                    background-color: #21618c;
+                }
+            """)
+        else:
+            self.current_model = "large-v3"
+            self.model_toggle_button.setText("v3")
+            self.model_toggle_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #27ae60;
+                    color: white;
+                    border: none;
+                    border-radius: 12px;
+                    font-size: 10px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #229954;
+                }
+                QPushButton:pressed {
+                    background-color: #1e8449;
+                }
+            """)
+        
+        self.logger.info(f"モデル切り替え: {self.current_model}")
+        self.model_changed.emit(self.current_model)
 
     def set_recording_state(self, recording: bool) -> None:
         """録音状態を設定"""
@@ -579,21 +791,46 @@ class MainWindow(QMainWindow):
         """
         dialog = TranscriptionResultDialog(text, self)
         dialog.show()
-
-        # ダイアログをメインウィンドウの近くに配置
-        dialog_x = self.x() - dialog.width() - 10
-        dialog_y = self.y()
-
-        # 画面外に出る場合は調整
-        screen = QApplication.primaryScreen()
-        screen_geometry = screen.availableGeometry()
-
-        if dialog_x < 0:
-            dialog_x = self.x() + self.width() + 10
-        if dialog_y + dialog.height() > screen_geometry.height():
-            dialog_y = screen_geometry.height() - dialog.height() - 20
-
-        dialog.move(dialog_x, dialog_y)
+    
+    # リアルタイム機能は一時保留
+    # def show_partial_transcription_result(self, partial_text: str) -> None:
+    #     """
+    #     部分的な文字起こし結果を表示（リアルタイム用）
+    #
+    #     Args:
+    #         partial_text: 部分的な文字起こし結果のテキスト
+    #     """
+    #     if not partial_text.strip():
+    #         return
+    #
+    #     # 既存のダイアログがあれば追記、なければ新規作成
+    #     if hasattr(self, '_realtime_dialog') and self._realtime_dialog and self._realtime_dialog.isVisible():
+    #         self._realtime_dialog.append_text(partial_text)
+    #     else:
+    #         self._realtime_dialog = RealtimeTranscriptionDialog(partial_text, self)
+    #         # ダイアログをメインウィンドウの近くに配置
+    #         dialog_x = self.x() - self._realtime_dialog.width() - 10
+    #         dialog_y = self.y()
+    #         if dialog_x < 0:
+    #             dialog_x = self.x() + self.width() + 10
+    #         self._realtime_dialog.move(dialog_x, dialog_y)
+    #         self._realtime_dialog.show()
+    #
+    #     # 既存のダイアログがある場合のみ位置調整
+    #     if hasattr(self, '_realtime_dialog') and self._realtime_dialog:
+    #         # 画面外に出る場合は調整
+    #         screen = QApplication.primaryScreen()
+    #         screen_geometry = screen.availableGeometry()
+    #         
+    #         current_x = self._realtime_dialog.x()
+    #         current_y = self._realtime_dialog.y()
+    #         
+    #         if current_x < 0:
+    #             current_x = self.x() + self.width() + 10
+    #         if current_y + self._realtime_dialog.height() > screen_geometry.height():
+    #             current_y = screen_geometry.height() - self._realtime_dialog.height() - 20
+    #         
+    #         self._realtime_dialog.move(current_x, current_y)
 
     def mousePressEvent(self, event) -> None:
         """マウスプレスイベント（ウィンドウドラッグ用）"""

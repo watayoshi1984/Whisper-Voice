@@ -76,6 +76,12 @@ def main() -> int:
             action="store_true",
             help="デバッグログを有効化（パッケージ版はデフォルトで有効）",
         )
+        # リアルタイムモードは一時保留
+        # parser.add_argument(
+        #     "--realtime",
+        #     action="store_true",
+        #     help="リアルタイム文字起こしモードを有効化（高速処理・軽量モデル使用）",
+        # )
         args, _ = parser.parse_known_args()
         model_from_env = os.environ.get("WHISPER_MODEL")
         selected_model = args.model or model_from_env or "large-v3-turbo"
@@ -84,6 +90,9 @@ def main() -> int:
         env_debug = os.environ.get("WHISPER_DEBUG", "").lower() in ("1", "true", "yes")
         is_packaged = getattr(sys, "frozen", False)
         debug_mode = bool(args.debug or env_debug or is_packaged)
+        
+        # リアルタイムモード判定（一時保留）
+        # realtime_mode = bool(args.realtime)
 
         # 統合ロガー初期化（できるだけ早く）
         if debug_mode:

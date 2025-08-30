@@ -50,6 +50,7 @@ class WhisperVoiceApp(QObject):
         Args:
             app: QApplicationインスタンス
             debug_mode: デバッグモードの有効/無効
+            model_size: Whisperモデルのサイズ
         """
         super().__init__()
         self.qt_app = app
@@ -108,6 +109,27 @@ class WhisperVoiceApp(QObject):
             # メインウィンドウ
             self.main_window = MainWindow()
             
+            # コマンドライン引数のモデルをUIに反映
+            if self.model_size == "large-v3-turbo":
+                self.main_window.current_model = "large-v3-turbo"
+                self.main_window.model_toggle_button.setText("turbo")
+                self.main_window.model_toggle_button.setStyleSheet("""
+                    QPushButton {
+                        background-color: #3498db;
+                        color: white;
+                        border: none;
+                        border-radius: 12px;
+                        font-size: 9px;
+                        font-weight: bold;
+                    }
+                    QPushButton:hover {
+                        background-color: #2980b9;
+                    }
+                    QPushButton:pressed {
+                        background-color: #21618c;
+                    }
+                """)
+            
             # 音声処理
             self.audio_processor = AudioProcessor(sample_rate=16000, channels=1)
 
@@ -141,7 +163,10 @@ class WhisperVoiceApp(QObject):
             
             # 文字起こしエンジン（選択されたモデルで初期化）
             self.app_logger.info("WhisperVoiceApp", f"文字起こしモデルを初期化: {self.model_size}")
-            self.transcription_engine = TranscriptionEngine(model_size=self.model_size, device="cpu")
+            self.transcription_engine = TranscriptionEngine(
+                model_size=self.model_size, 
+                device="cpu"
+            )
             
             # クリップボード管理
             self.clipboard_manager = ClipboardManager()
@@ -181,6 +206,7 @@ class WhisperVoiceApp(QObject):
         
         # メインウィンドウ
         self.main_window.mic_button_clicked.connect(self._toggle_recording)
+        self.main_window.model_changed.connect(self._on_model_changed)
         
         # 音声処理
         self.audio_processor.recording_started.connect(self._on_recording_started)
@@ -194,6 +220,8 @@ class WhisperVoiceApp(QObject):
         self.transcription_engine.transcription_failed.connect(self._on_transcription_failed)
         self.transcription_engine.model_loading_started.connect(self._on_model_loading_started)
         self.transcription_engine.model_loading_completed.connect(self._on_model_loading_completed)
+        # リアルタイム処理用シグナル（一時保留）
+        # self.transcription_engine.partial_transcription.connect(self._on_partial_transcription)
         
         # クリップボード管理
         self.clipboard_manager.copy_completed.connect(self._on_clipboard_copy_completed)
@@ -311,6 +339,7 @@ class WhisperVoiceApp(QObject):
         """音声データ準備完了時の処理"""
         if self.transcription_engine and not self.is_processing:
             self.logger.info("音声データを文字起こしエンジンに送信します")
+            # 通常の文字起こし処理
             self.transcription_engine.transcribe_audio(audio_data, 16000)
         else:
             self.logger.warning("文字起こしエンジンが利用できないか、既に処理中です")
@@ -351,6 +380,43 @@ class WhisperVoiceApp(QObject):
         
         self.logger.error(f"文字起こしエラー: {error_message}")
         self._show_error_dialog("文字起こしエラー", error_message)
+    
+    # リアルタイム機能は一時保留
+    # def _on_partial_transcription(self, partial_text: str) -> None:
+    #     """部分的な文字起こし結果の処理（リアルタイム用）"""
+    #     self.logger.info(f"部分的な文字起こし結果: {partial_text[:50]}...")
+    #     
+    #     # UIからの現在のモード状態を取得
+    #     current_realtime_mode = self.main_window.realtime_mode if self.main_window else self.realtime_mode
+    #     
+    #     # リアルタイムモードでは部分的な結果も表示
+    #     if current_realtime_mode and self.main_window:
+    #         # 既存のダイアログに追記するか、新しいダイアログを表示
+    #         self.main_window.show_partial_transcription_result(partial_text)
+    
+    def _on_model_changed(self, model_name: str) -> None:
+        """モデル変更時の処理"""
+        self.logger.info(f"Whisperモデルが変更されました: {model_name}")
+        
+        # 録音中の場合は警告
+        if self.is_recording:
+            self.logger.warning("録音中のモデル変更は次回の録音から有効になります")
+            return
+        
+        # 新しいモデルでTranscriptionEngineを再初期化
+        if self.transcription_engine:
+            self.logger.info(f"モデル '{model_name}' をロード中...")
+            self.transcription_engine = TranscriptionEngine(
+                model_size=model_name, 
+                device="cpu"
+            )
+            
+            # シグナルを再接続
+            self.transcription_engine.transcription_started.connect(self._on_transcription_started)
+            self.transcription_engine.transcription_completed.connect(self._on_transcription_completed)
+            self.transcription_engine.transcription_failed.connect(self._on_transcription_failed)
+            self.transcription_engine.model_loading_started.connect(self._on_model_loading_started)
+            self.transcription_engine.model_loading_completed.connect(self._on_model_loading_completed)
     
     def _on_model_loading_started(self) -> None:
         """モデルロード開始時の処理"""
